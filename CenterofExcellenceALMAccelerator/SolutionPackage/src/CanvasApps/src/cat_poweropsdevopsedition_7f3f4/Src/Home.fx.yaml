@@ -6,10 +6,7 @@ Home As screen:
             ReinitializeHome,
             UpdateContext(
                 {
-                    adminApp: LookUp(
-                        'Model-driven Apps',
-                        'Unique Name' = "cat_DeploymentProfiles"
-                    ),
+                    adminApp: LookUp('Model-driven Apps', 'Unique Name' = "cat_DeploymentProfiles"),
                     showLoader: true,
                     statusesLoading: true,
                     locStartCheckBuildStatusTimer: false,
@@ -23,7 +20,7 @@ Home As screen:
                     GetEnvironmentId.Run()
                 )
             );
-            Set(
+            Set( 
                 dsRegion,
                 ""
             );
@@ -39,13 +36,13 @@ Home As screen:
                 )
             );
             ClearCollect(
-                DeploymentUserSettings,
-                AddColumns(
-                    'Deployment User Settings',
-                    "DisplayName",
-                    Name
-                )
-            );
+                        DeploymentUserSettings,
+                        AddColumns(
+                            'Deployment User Settings',
+                            "DisplayName",
+                            Name
+                        )
+                    );
             If(
                 CountRows(DeploymentUserSettings) = 0,
                 Patch(
@@ -109,28 +106,28 @@ Home As screen:
                     "DELETE SOLUTION"
                 )
             );
-            ClearCollect(
-                DeploymentProfiles,
-                AddColumns(
-                    DeploymentUserSetting.'Deployment Profiles',
-                    "DisplayName",
-                    Name,
-                    "PipelineProject",
-                    'Pipeline Project',
-                    "ProfileOrganization",
-                    Organization,
-                    "SolutionProject",
-                    Project,
-                    "SolutionRepo",
-                    Repository,
-                    "SolutionRepoId",
-                    'Repository ID',
-                    "SourceBranch",
-                    'Promote Source Branch Name',
-                    "TargetBranch",
-                    'Promote Target Branch Name'
-                )
-            );
+        ClearCollect(
+            DeploymentProfiles,
+            AddColumns(
+                DeploymentUserSetting.'Deployment Profiles',
+                "DisplayName",
+                Name,
+                "PipelineProject",
+                'Pipeline Project',
+                "ProfileOrganization",
+                Organization,
+                "SolutionProject",
+                Project,
+                "SolutionRepo",
+                Repository,
+                "SolutionRepoId",
+                'Repository ID',
+                "SourceBranch",
+                'Promote Source Branch Name',
+                "TargetBranch",
+                'Promote Target Branch Name'
+            )
+        );
             Collect(
                 DeploymentProfiles,
                 {DisplayName: ""}
@@ -6029,10 +6026,11 @@ Home As screen:
                             );
                         )
                     );
+                    UpdateContext({debugText: JSON(TempSolutionsImportLatestBuildStatuses)});
                     ClearCollect(
                         SolutionsImportLatestBuildStatuses,
                         Sort(
-                            Filter(TempSolutionsImportLatestBuildStatuses, !IsBlankOrError(importSolutionStatus)) ,
+                            TempSolutionsImportLatestBuildStatuses,
                             importSolutionStatus.queueTime,
                             Descending
                         )

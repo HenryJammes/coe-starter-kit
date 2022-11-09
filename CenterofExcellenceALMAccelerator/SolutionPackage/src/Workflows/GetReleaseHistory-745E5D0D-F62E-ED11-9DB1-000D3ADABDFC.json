@@ -4,7 +4,7 @@
       "shared_commondataserviceforapps": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "cat_sharedcommondataserviceforapps_3bba0"
+          "connectionReferenceLogicalName": "cat_sharedcommondataserviceforapps_76cb1"
         },
         "api": {
           "name": "shared_commondataserviceforapps"

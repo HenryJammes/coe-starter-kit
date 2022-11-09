@@ -20,7 +20,17 @@ AzureDevOpsProjects As screen:
             )
         );
         
-        
+
+    lblVersion As Label:
+        Alignment: =Align.Left
+        DisplayMode: =DisplayMode.Edit
+        FontSize: =7
+        Height: =20
+        Text: ="0.0.0.3"
+        Width: =75
+        X: =20
+        Y: =App.Height - Self.Height
+        ZIndex: =1
 
     RootLayout As groupContainer.horizontalAutoLayoutContainer:
         Height: =Parent.Height
@@ -184,7 +194,7 @@ AzureDevOpsProjects As screen:
                             DefaultSelectedItems: =
                             DisplayMode: =DisplayMode.Edit
                             Height: =32
-                            Items: =Sort(CustomAzureDevOps.GetOrganizations(), AccountName, Ascending)
+                            Items: =CustomAzureDevOps.GetOrganizations()
                             LayoutMinHeight: =32
                             LayoutMinWidth: =320
                             OnChange: |-
@@ -427,7 +437,7 @@ AzureDevOpsProjects As screen:
                                             ClearCollect(colEnvironments, PowerAppsforMakers.GetEnvironments().value);
                                             Clear(colEnvironmentsDetails);
                                             ForAll(colEnvironments, 
-                                                Collect(colEnvironmentsDetails, { name: ThisRecord.properties.linkedEnvironmentMetadata.friendlyName, url: ThisRecord.properties.linkedEnvironmentMetadata.instanceUrl, nameTypeUrl: $"{ThisRecord.properties.linkedEnvironmentMetadata.friendlyName} ({Substitute(ThisRecord.properties.environmentSku, "NotSpecified", "Microsoft Teams")}) ({Substitute(Substitute(ThisRecord.properties.linkedEnvironmentMetadata.instanceUrl, "https://", ""), "/", "")})" });
+                                                Collect(colEnvironmentsDetails, { name: ThisRecord.properties.linkedEnvironmentMetadata.friendlyName, url: ThisRecord.properties.linkedEnvironmentMetadata.instanceUrl });
                                             );
                                            
                                             If(createProjectPermission,
@@ -863,27 +873,10 @@ AzureDevOpsProjects As screen:
                             DisplayMode: =DisplayMode.Edit
                             Height: =200
                             Items: =colProjectRepos
-                            OnChange: |-
-                                =If(IsBlank(Self.Selected),
-                                    UpdateContext({isTemplateRepo: false, repoContent: Blank()});
-                                    ,
-                                    UpdateContext({ isTemplateRepo: Not(IsError(CustomAzureDevOps.GetFile(ddOrganization.Selected.AccountName, fdProjects.Selected.name, Self.Selected.id, { path: "/Pipelines/export-solution-to-git.yml", 'api-version': "7.1-preview"})) )});
-                                    
-                                    UpdateContext({
-                                        repoContent: If(isTemplateRepo, 
-                                            IfError(CustomAzureDevOps.GetFile(ddOrganization.Selected.AccountName, fdProjects.Selected.name, Self.Selected.id, { path: "/version.json", 'api-version': "7.1-preview"}).content, JSON({
-                                  version: "Unknown",
-                                  published: "",
-                                  content: "coe-alm-accelerator-templates"
-                                }))
-                                    , JSON({ version: "" }))
-                                    });
-                                );
                             OnSelect: =false
                             PageSize: =2000
-                            RaiseOnRowSelectionChangeEvent: =true
                             SelectionAlwaysVisible: =true
-                            SelectionType: ='''PowerCAT.FluentDetailsList.SelectionType'''.Single
+                            SelectionType: ='''PowerCAT.FluentDetailsList.SelectionType'''.Multiple
                             Width: =Parent.Width - Parent.PaddingRight - 20
                             X: =Parent.PaddingLeft
                             Y: =lblRepositories.Height + cbRepositories.Height
@@ -914,8 +907,6 @@ AzureDevOpsProjects As screen:
                                 
                                     {ItemKey:"View",ItemDisplayName:"View",ItemIconName:"View", ItemEnabled:(CountRows(fdRepositories.SelectedItems) = 1 And CountRows(fdProjects.SelectedItems) = 1)},
                                 
-                                    {ItemKey:"Upgrade",ItemDisplayName:"Upgrade",ItemIconName:"SyncStatus", ItemEnabled:(isTemplateRepo) And CountRows(fdRepositories.SelectedItems) = 1 And CountRows(fdProjects.SelectedItems) = 1},
-                                
                                     {ItemKey:"Refresh",ItemDisplayName:"Refresh",ItemIconName:"Refresh", ItemEnabled:(CountRows(fdProjects.SelectedItems) = 1)},
                                 
                                     // Far Items
@@ -935,10 +926,6 @@ AzureDevOpsProjects As screen:
                                     ,
                                     "View",
                                     Launch($"https://dev.azure.com/{currentOrganization.AccountName}/{currentProject.name}/_git/{fdRepositories.Selected.name}");
-                                    ,
-                                    "Upgrade",
-                                    UpdateContext({almProjectSyncPipelineId: If(IsBlank(LookUp(colProjectPipelines, name = "sync-pipeline-repo")), -1, LookUp(colProjectPipelines, name = "sync-pipeline-repo").id)});
-                                    UpdateContext({showUpgradePipelineRepoPanel: true});
                                     ,
                                     "Info",
                                     UpdateContext({
@@ -1918,7 +1905,7 @@ AzureDevOpsProjects As screen:
                             "ddExistingProjects_1 As 'Combo box'.pcfdataset":
                                 DisplayMode: =If(Not(IsBlank(ddOrganization.Selected)) And IsBlank(txtProjectName_5.Value), DisplayMode.Edit, DisplayMode.Disabled)
                                 Height: =32
-                                Items: =If(Not(IsBlankOrError(currentOrganization.AccountName)), Sort(colProjects, name, Ascending), Blank())
+                                Items: =If(Not(IsBlankOrError(currentOrganization.AccountName)), colProjects, Blank())
                                 OnChange: |
                                     =If(CountRows(Self.SelectedItems) > 0,
                                         ClearCollect(colExistingProjectRepos, CustomAzureDevOps.GetGitRepos(currentOrganization.AccountName, Self.Selected.name, {'api-version': "6.0"}).value);
@@ -2203,7 +2190,7 @@ AzureDevOpsProjects As screen:
                                     =Table({Name:"None"})
                                 DisplayMode: =If(chkProjectWizardCreateRepoExistingRepo_1.Checked,DisplayMode.Disabled, DisplayMode.Edit)
                                 Height: =32
-                                Items: =If(Not(IsBlank(ddOrganization.Selected)), Sort(colProjects, name, Ascending))
+                                Items: =If(Not(IsBlank(ddOrganization.Selected)), colProjects)
                                 OnChange: |-
                                     =Clear(colPipelineRepos);
                                     If(Not(IsBlankOrError(Self.Selected.name)),
@@ -2463,7 +2450,6 @@ AzureDevOpsProjects As screen:
                                 OnSelect: |-
                                     =UpdateContext({wizardShowSpinner: true});
                                     Clear(colNewALMAccProjectServiceConnectionResult);
-                                    Collect(ColNewAlmAccServiceConnectionCreated, {});
                                     Clear(colNewAlmAccServiceConnectionCreated);
                                     ForAll(colNewALMAccProjectServiceConnections,
                                         Collect(colNewALMAccProjectServiceConnectionResult, {id: CustomAzureDevOps.CreateServiceEndpoint(newAlmProjectOrganization, {
@@ -2750,35 +2736,18 @@ AzureDevOpsProjects As screen:
                                 DisplayMode: =DisplayMode.Edit
                                 Height: =32
                                 Items: =colEnvironmentsDetails
-                                Tooltip: =
                                 Width: =Parent.Width - 220
                                 X: =200
                                 Y: =10
                                 ZIndex: =10
 
-                                nameTypeUrl1 As pcfDataField.textualColumn:
-                                    FieldDisplayName: ="nameTypeUrl"
-                                    FieldName: ="nameTypeUrl"
-                                    FieldType: ="s"
-                                    FieldVariantName: ="textualColumn"
-                                    Order: =1
-                                    ZIndex: =32
-
-                                name As pcfDataField.textualColumn:
+                                name9_1 As pcfDataField.textualColumn:
                                     FieldDisplayName: ="name"
                                     FieldName: ="name"
                                     FieldType: ="s"
                                     FieldVariantName: ="textualColumn"
-                                    Order: =2
-                                    ZIndex: =33
-
-                                url As pcfDataField.textualColumn:
-                                    FieldDisplayName: ="url"
-                                    FieldName: ="url"
-                                    FieldType: ="s"
-                                    FieldVariantName: ="textualColumn"
-                                    Order: =3
-                                    ZIndex: =34
+                                    Order: =1
+                                    ZIndex: =30
 
                             lblSelectEnvironme_1 As label:
                                 BorderColor: =RGBA(0, 18, 107, 1)
@@ -3279,10 +3248,10 @@ AzureDevOpsProjects As screen:
                                     UpdateContext({importPipeline: CustomAzureDevOps.CreatePipeline(newAlmProjectOrganization, newAlmProjectName, {
                                         'api-version': "6.0",
                                         folder: "",
-                                        name: "import-unmanaged-to-dev-environment",
+                                        name: "import-solution-to-dev-environment",
                                         configuration: {
                                             type: "yaml",
-                                            path: "/Pipelines/import-unmanaged-to-dev-environment.yml",
+                                            path: "/Pipelines/import-solution-to-dev-environment.yml",
                                             repository: {
                                                 id: newAlmProjectPipelineTemplateRepositoryId,
                                                 name: newAlmProjectPipelineTemplateRepositoryName,
@@ -4546,7 +4515,6 @@ AzureDevOpsProjects As screen:
 
         "ddReleaseTags_1 As 'Combo box'.pcfdataset":
             AccessibleLabel: ="Align"
-            AllowMultiSelect: =false
             DefaultSelectedItems: |-
                 =Table({Name:"None"})
             DisplayMode: =If(IsBlank(ddOrganization.Selected) Or Not(chkInstallPipelineTemplates.Checked) Or Not(createProjectPermission) Or createNewProjectLoop Or createRepoLoop, DisplayMode.Disabled, DisplayMode.Edit)
@@ -4554,7 +4522,6 @@ AzureDevOpsProjects As screen:
             Items: =Sort(colReleaseTags, Published, Descending)
             OnChange: =false
             Text: =""
-            Tooltip: =Self.Selected.Tag
             Visible: =showNewProjectPanel
             Width: =plnNewRepository.DialogWidth - 76
             X: =Parent.Width - pnlNewProject.DialogWidth + 20
@@ -4646,352 +4613,11 @@ AzureDevOpsProjects As screen:
             Height: =45
             Size: =10.5
             Text: ="Enter project name"
-            Visible: =showNewProjectPanel And IsBlank(txtProjectName.Value) And createProjectPermission
+            Visible: =showNewProjectPanel And IsBlank(txtProjectName.Value)
             Width: =pnlNewProject.DialogWidth - 40
             X: =Parent.Width - pnlNewProject.DialogWidth + 20
             Y: =App.Height - 100
             ZIndex: =77
-
-    cntUpgradePipelineRepo As groupContainer.manualLayoutContainer:
-        Height: =App.Height
-        Visible: =showUpgradePipelineRepoPanel
-        Width: =App.Width
-        ZIndex: =79
-
-        pnlUpgradePipelineRepo As Panel:
-            Buttons: |-
-                =If(txtCurrentPipelineVersion.Value = txtUpgradePipelineVersion.Value Or Not(isTemplateRepo) Or almProjectSyncPipelineId = -1,
-                    Table({Label: "Cancel", ButtonType:'''Microsoft.CoreControls.Button.ButtonType'''.Standard }),
-                    Table({Label: "Cancel", ButtonType:'''Microsoft.CoreControls.Button.ButtonType'''.Standard } ,{Label: "Upgrade", ButtonType:'''Microsoft.CoreControls.Button.ButtonType'''.Primary})
-                )    
-            Fill: =pnlUpgradePipelineRepo.OverlayColor
-            Height: =Parent.Height
-            OnButtonSelect: |-
-                =Switch(Self.SelectedButton.Label,
-                    "Upgrade",
-                
-                    UpdateContext({syncPipelineRun: CustomAzureDevOps.RunSyncPipeline(ddOrganization.Selected.AccountName, fdProjects.Selected.name, almProjectSyncPipelineId, {
-                        'api-version': "6.0",
-                        definition: {
-                            id: almProjectSyncPipelineId
-                        },
-                        templateParameters: {
-                            BranchToCreate: $"upgrade{txtUpgradePipelineVersion.Value}",
-                            TargetBranch: "main",
-                            SyncFrom: "Tag",
-                            SourceBranchOrTag: txtUpgradePipelineVersion.Value,
-                            AutoCompletePR: chkAutoCompleteUpgrade.Checked,
-                            deleteSourceBranch: chkDeleteSourceBranch.Checked
-                        }
-                    })}); 
-                    
-                    UpdateContext({showUpgradePipelineRepoPanel: false}),
-                
-                    "Cancel",
-                    UpdateContext({
-                        showUpgradePipelineRepoPanel: false
-                    });
-                )
-            OnCloseSelect: |
-                =UpdateContext({
-                    showUpgradePipelineRepoPanel: false
-                });
-            Subtitle: ="Upgrade the Pipeline Template version in the repository"
-            Title: ="Pipeline Repository Details"
-            Width: =Parent.Width
-            ZIndex: =1
-
-        "txtProjectName_4 As 'Text box'":
-            AccessibleLabel: ="Search files"
-            DisplayMode: =Disabled
-            Height: =32
-            Placeholder: ="Project Name"
-            Value: =currentProject.name
-            Visible: =true
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =163
-            ZIndex: =2
-
-        lblProjectName_4 As label:
-            BorderColor: =RGBA(0, 18, 107, 1)
-            Color: =RGBA(0, 0, 0, 1)
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Font: =Font.'Segoe UI'
-            FontWeight: =FontWeight.Lighter
-            Height: =32
-            Size: =10.5
-            Text: ="Project Name"
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =131
-            ZIndex: =3
-
-        "txtRepositoryName_1 As 'Text box'":
-            AccessibleLabel: ="Search files"
-            DisplayMode: =DisplayMode.Disabled
-            Height: =32
-            Placeholder: ="Repository Name"
-            Value: =fdRepositories.Selected.name
-            Visible: =true
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =243
-            ZIndex: =4
-
-        lblRepositoryName_1 As label:
-            BorderColor: =RGBA(0, 18, 107, 1)
-            Color: =RGBA(0, 0, 0, 1)
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Font: =Font.'Segoe UI'
-            FontWeight: =FontWeight.Lighter
-            Height: =32
-            Size: =10.5
-            Text: ="Repository Name"
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =211
-            ZIndex: =5
-
-        lblPipelineTemplateVersion_1 As label:
-            BorderColor: =RGBA(0, 18, 107, 1)
-            Color: =RGBA(0, 0, 0, 1)
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Font: =Font.'Segoe UI'
-            FontWeight: =FontWeight.Lighter
-            Height: =32
-            Size: =10.5
-            Text: ="Current Pipeline Template Version"
-            Visible: =Not(IsBlank(ParseJSON(repoContent).version))
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - pnlNewProject.DialogWidth + 20
-            Y: =321
-            ZIndex: =6
-
-        icoUpdateReleaseTagsNewRepo_2 As icon.Reload:
-            BorderColor: =RGBA(0, 0, 0, 0)
-            Color: =RGBA(0, 120, 212, 1)
-            DisabledBorderColor: =RGBA(166, 166, 166, 1)
-            DisabledColor: =RGBA(220, 220, 220, 1)
-            DisabledFill: =RGBA(0, 0, 0, 0)
-            DisplayMode: =If(almProjectSyncPipelineId = -1, Disabled, Edit)
-            Height: =32
-            HoverBorderColor: =RGBA(0, 0, 0, 0)
-            HoverColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            HoverFill: =RGBA(0, 0, 0, 0)
-            Icon: =Icon.Reload
-            OnSelect: |-
-                =UpdateContext({ isTemplateRepo: Not(IsError(CustomAzureDevOps.GetFile(ddOrganization.Selected.AccountName, fdProjects.Selected.name, fdRepositories.Selected.id, { path: "/Pipelines/export-solution-to-git.yml", 'api-version': "7.1-preview"}).content) )});
-                    
-                UpdateContext({
-                    repoContent: If(isTemplateRepo, 
-                        IfError(CustomAzureDevOps.GetFile(ddOrganization.Selected.AccountName, fdProjects.Selected.name, fdRepositories.Selected.id, { path: "/version.json", 'api-version': "7.1-preview"}).content, JSON({
-                  version: "Unknown",
-                  published: "",
-                  content: "coe-alm-accelerator-templates"
-                }))
-                    , JSON({ version: "" }))
-                });
-                
-                Reset(txtCurrentPipelineVersion);
-            PaddingBottom: =3
-            PaddingLeft: =3
-            PaddingRight: =3
-            PaddingTop: =3
-            PressedBorderColor: =RGBA(0, 0, 0, 0)
-            PressedColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            PressedFill: =RGBA(0, 0, 0, 0)
-            Visible: =Not(IsBlank(ParseJSON(repoContent).version))
-            Width: =26
-            X: =ddReleaseTags.X + ddReleaseTags.Width + 5
-            Y: =354
-            ZIndex: =7
-
-        "txtCurrentPipelineVersion As 'Text box'":
-            AccessibleLabel: ="Search files"
-            DisplayMode: =If(almProjectSyncPipelineId = -1, Disabled, View)
-            Height: =32
-            Placeholder: =""
-            Tooltip: =Text(ParseJSON(repoContent).version)
-            Value: =Text(ParseJSON(repoContent).version)
-            Visible: =Not(IsBlank(ParseJSON(repoContent).version))
-            Width: =plnNewRepository.DialogWidth - 80
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =355
-            ZIndex: =8
-
-        lblPipelineTemplateVersion_2 As label:
-            BorderColor: =RGBA(0, 18, 107, 1)
-            Color: =RGBA(0, 0, 0, 1)
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Font: =Font.'Segoe UI'
-            FontWeight: =FontWeight.Lighter
-            Height: =32
-            Size: =10.5
-            Text: ="Upgrade to Pipeline Template Version"
-            Visible: =Not(IsBlank(ParseJSON(repoContent).version))
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - pnlNewProject.DialogWidth + 20
-            Y: =397
-            ZIndex: =9
-
-        icoUpdateReleaseTagsNewRepo_4 As icon.Reload:
-            BorderColor: =RGBA(0, 0, 0, 0)
-            Color: =RGBA(0, 120, 212, 1)
-            DisabledBorderColor: =RGBA(166, 166, 166, 1)
-            DisabledColor: =RGBA(220, 220, 220, 1)
-            DisabledFill: =RGBA(0, 0, 0, 0)
-            DisplayMode: =If(almProjectSyncPipelineId = -1, Disabled, Edit)
-            Height: =32
-            HoverBorderColor: =RGBA(0, 0, 0, 0)
-            HoverColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            HoverFill: =RGBA(0, 0, 0, 0)
-            Icon: =Icon.Reload
-            OnSelect: |-
-                =IfError(UpdateReleaseHistoryInstant.Run(),
-                    Notify("Error refreshing release tags")
-                    ,
-                    ClearCollect(colReleaseTags, 'Release Histories')
-                );
-                
-                Reset(txtUpgradePipelineVersion);
-            PaddingBottom: =3
-            PaddingLeft: =3
-            PaddingRight: =3
-            PaddingTop: =3
-            PressedBorderColor: =RGBA(0, 0, 0, 0)
-            PressedColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            PressedFill: =RGBA(0, 0, 0, 0)
-            Visible: =Not(IsBlank(ParseJSON(repoContent).version))
-            Width: =26
-            X: =ddReleaseTags.X + ddReleaseTags.Width + 5
-            Y: =430
-            ZIndex: =10
-
-        "txtUpgradePipelineVersion As 'Text box'":
-            AccessibleLabel: ="Search files"
-            DisplayMode: =If(almProjectSyncPipelineId = -1, Disabled, View)
-            Height: =32
-            Placeholder: ="Repository Name"
-            Tooltip: =First(Sort(colReleaseTags, Published, Descending)).Tag
-            Value: =First(Sort(colReleaseTags, Published, Descending)).Tag
-            Visible: =Not(IsBlank(ParseJSON(repoContent).version))
-            Width: =plnNewRepository.DialogWidth - 80
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =431
-            ZIndex: =11
-
-        txtUpgradePipelineVersionError As Label:
-            AutoHeight: =true
-            Color: =RGBA(184, 0, 0, 1)
-            DisplayMode: =DisplayMode.Edit
-            Height: =32
-            Text: |-
-                =If(txtCurrentPipelineVersion.Value = txtUpgradePipelineVersion.Value,
-                    "Repository already has latest Pipeline Template version installed."
-                    ,
-                    If(IsBlank(ParseJSON(repoContent).version),
-                        "This is not a Pipeline Templates Repository."
-                    )
-                )
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =App.Height - 100
-            ZIndex: =12
-
-        "chkAutoCompleteUpgrade As 'Check box'":
-            Checked: =false
-            DisplayMode: =If(almProjectSyncPipelineId = -1, Disabled, Edit)
-            Height: =32
-            Label: ="Auto complete upgrade"
-            OnUncheck: =Reset(chkDeleteSourceBranch)
-            Tooltip: ="The upgrade process will create a Pull Request in which you can verify the changes in the upgrade before completing the upgrade. If auto complete upgrade is checked the Pull Request will be automatically completed and you will not be able to verify the changes before the upgrade completes"
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =485
-            ZIndex: =13
-
-        lblSyncPipelineNotFound As Label:
-            Color: =RGBA(184, 0, 0, 1)
-            DisplayMode: =DisplayMode.Edit
-            Height: =32
-            Text: ="Sync pipeline not found"
-            Visible: =almProjectSyncPipelineId = -1
-            Width: =320
-            X: =986
-            Y: =668
-            ZIndex: =14
-
-        lblAutoCompleteNote As Label:
-            DisplayMode: =DisplayMode.Edit
-            FontWeight: =FontWeight.Semibold
-            Height: =76
-            Text: |-
-                ="NOTE: if you auto complete the upgrade you will not get a chance to verify the changes before the upgrade is applied"
-            Visible: =chkAutoCompleteUpgrade.Checked
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - pnlNewProject.DialogWidth + 20
-            Y: =607
-            ZIndex: =15
-
-        "chkDeleteSourceBranch As 'Check box'":
-            Checked: =false
-            DisplayMode: =If(almProjectSyncPipelineId = -1 Or Not(chkAutoCompleteUpgrade.Checked), Disabled, Edit)
-            Height: =32
-            Label: ="Delete upgrade branch"
-            Tooltip: ="When upgrading the pipeline templates a temporary branch will be created. If the Delete upgrade branch is checked the temporary upgrade branch will be deleted when upgrade is complete"
-            Width: =plnNewRepository.DialogWidth - 40
-            X: =Parent.Width - plnNewRepository.DialogWidth + 20
-            Y: =532
-            ZIndex: =16
-
-        icoInfoAutoComplete As icon.Information:
-            BorderColor: =RGBA(0, 0, 0, 0)
-            Color: =RGBA(0, 120, 212, 1)
-            DisabledBorderColor: =RGBA(166, 166, 166, 1)
-            DisabledColor: =RGBA(220, 220, 220, 1)
-            DisabledFill: =RGBA(0, 0, 0, 0)
-            Height: =32
-            HoverBorderColor: =RGBA(0, 0, 0, 0)
-            HoverColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            HoverFill: =RGBA(0, 0, 0, 0)
-            Icon: =Icon.Information
-            PaddingBottom: =3
-            PaddingLeft: =3
-            PaddingRight: =3
-            PaddingTop: =3
-            PressedBorderColor: =RGBA(0, 0, 0, 0)
-            PressedColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            PressedFill: =RGBA(0, 0, 0, 0)
-            Tooltip: ="The upgrade process will create a Pull Request in which you can verify the changes in the upgrade before completing the upgrade. If auto complete upgrade is checked the Pull Request will be automatically completed and you will not be able to verify the changes before the upgrade completes"
-            Width: =26
-            X: =Parent.Width - plnNewRepository.DialogWidth + 200
-            Y: =485
-            ZIndex: =17
-
-        icoInfoDeleteSourceBranch As icon.Information:
-            BorderColor: =RGBA(0, 0, 0, 0)
-            Color: =RGBA(0, 120, 212, 1)
-            DisabledBorderColor: =RGBA(166, 166, 166, 1)
-            DisabledColor: =RGBA(220, 220, 220, 1)
-            DisabledFill: =RGBA(0, 0, 0, 0)
-            Height: =32
-            HoverBorderColor: =RGBA(0, 0, 0, 0)
-            HoverColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            HoverFill: =RGBA(0, 0, 0, 0)
-            Icon: =Icon.Information
-            PaddingBottom: =3
-            PaddingLeft: =3
-            PaddingRight: =3
-            PaddingTop: =3
-            PressedBorderColor: =RGBA(0, 0, 0, 0)
-            PressedColor: =ColorFade(RGBA(0, 120, 212, 1), -30%)
-            PressedFill: =RGBA(0, 0, 0, 0)
-            Tooltip: ="When upgrading the pipeline templates a temporary branch will be created. If the Delete upgrade branch is checked the temporary upgrade branch will be deleted when upgrade is complete"
-            Width: =26
-            X: =Parent.Width - plnNewRepository.DialogWidth + 194
-            Y: =532
-            ZIndex: =18
 
     grpNewRepository As group:
         Height: =5
@@ -5025,8 +4651,7 @@ AzureDevOpsProjects As screen:
                         {
                             newProjectOrganization: ddOrganization.Selected.AccountName,
                             newProjectName: txtProjectName_2.Value,
-                            newProjectInstallTemplates: chkInstallPipelines.Checked,
-                            newProjectRepoSetPermissions: chkSetPermissions.Checked,
+                            newProjectInstallTemplates: chkSetPermissions.Checked,
                             newPipelineTemplateRepository: txtRepositoryName.Value,
                             newPipelineTemplateVersion: ddReleaseTags.Selected.Tag,
                             createRepoOperation: "createRepo",
@@ -5043,8 +4668,8 @@ AzureDevOpsProjects As screen:
                 )
             OnCloseSelect: |-
                 =UpdateContext({showNewRepositoryPanel:false})
-            Subtitle: =$"Create a new Azure Git Repository in the {currentProject.name} Project"
-            Title: ="New Repository"
+            Subtitle: ="Create a new Azure DevOps Project to be used with ALM Accelerator"
+            Title: ="New Azure DevOps Project"
             Visible: =showNewRepositoryPanel
             Width: =App.Width
             ZIndex: =23
@@ -5206,84 +4831,82 @@ AzureDevOpsProjects As screen:
                     
                         UpdateContext({newProjectId: LookUp(colProjects, name = newProjectName).id});
                 
-                        If(newProjectRepoSetPermissions,
-                            // Get build service identity
-                            ClearCollect(
-                                projectBuildServiceAccount,
-                                CustomAzureDevOps.GetIdentities(
-                                    ddOrganization.Selected.AccountName,
-                                    {
-                                        'api-version': "7.1-preview.1",
-                                        searchFilter: "General",
-                                        filterValue: Concatenate(
-                                            newProjectName,
-                                            " Build Service (",
-                                            ddOrganization.Selected.AccountName,
-                                            ")"
-                                        )
-                                    }
-                                ).value
-                            );
-                            
-                            // Set Permissions
-                            CustomAzureDevOps.SetPermissions(
+                        // Get build service identity
+                        ClearCollect(
+                            projectBuildServiceAccount,
+                            CustomAzureDevOps.GetIdentities(
                                 ddOrganization.Selected.AccountName,
-                                "2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87",
                                 {
-                                    'api-version': "6.0",
-                                    token: "repoV2/" & newProjectId & "/" & LookUp(
-                                        colProjectRepos,
-                                        name = newPipelineTemplateRepository
-                                    ).id,
-                                    merge: true,
-                                    accessControlEntries: {
-                                        descriptor: First(projectBuildServiceAccount).descriptor,
-                                        allow: 16404,
-                                        deny: 0
-                                    }
+                                    'api-version': "7.1-preview.1",
+                                    searchFilter: "General",
+                                    filterValue: Concatenate(
+                                        newProjectName,
+                                        " Build Service (",
+                                        ddOrganization.Selected.AccountName,
+                                        ")"
+                                    )
                                 }
-                            );
+                            ).value
+                        );
+                        
+                        // Set Permissions
+                        CustomAzureDevOps.SetPermissions(
+                            ddOrganization.Selected.AccountName,
+                            "2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87",
+                            {
+                                'api-version': "6.0",
+                                token: "repoV2/" & newProjectId & "/" & LookUp(
+                                    colProjectRepos,
+                                    name = newPipelineTemplateRepository
+                                ).id,
+                                merge: true,
+                                accessControlEntries: {
+                                    descriptor: First(projectBuildServiceAccount).descriptor,
+                                    allow: 16404,
+                                    deny: 0
+                                }
+                            }
+                        );
                 
-                            // Get build service identity
-                            ClearCollect(
-                                projectBuildServiceAccount,
-                                CustomAzureDevOps.GetIdentities(
-                                    ddOrganization.Selected.AccountName,
-                                    {
-                                        'api-version': "7.1-preview.1",
-                                        searchFilter: "General",
-                                        filterValue: Concatenate(
-                                            "Project Collection Build Service (",
-                                            ddOrganization.Selected.AccountName,
-                                            ")"
-                                        )
-                                    }
-                                ).value
-                            );
-                            
-                
-                
-                
-                            // Set Permissions
-                            CustomAzureDevOps.SetPermissions(
+                        // Get build service identity
+                        ClearCollect(
+                            projectBuildServiceAccount,
+                            CustomAzureDevOps.GetIdentities(
                                 ddOrganization.Selected.AccountName,
-                                "2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87",
                                 {
-                                    'api-version': "6.0",
-                                    token: "repoV2/" & newProjectId & "/" & LookUp(
-                                        colProjectRepos,
-                                        name = newPipelineTemplateRepository
-                                    ).id,
-                                    merge: true,
-                                    accessControlEntries: {
-                                        descriptor: First(projectBuildServiceAccount).descriptor,
-                                        allow: 16404,
-                                        deny: 0
-                                    }
+                                    'api-version': "7.1-preview.1",
+                                    searchFilter: "General",
+                                    filterValue: Concatenate(
+                                        "Project Collection Build Service (",
+                                        ddOrganization.Selected.AccountName,
+                                        ")"
+                                    )
                                 }
-                            );
-                        );    
-                            
+                            ).value
+                        );
+                        
+                
+                
+                
+                        // Set Permissions
+                        CustomAzureDevOps.SetPermissions(
+                            ddOrganization.Selected.AccountName,
+                            "2e9eb7ed-3c0a-47d4-87c1-0ffdd275fd87",
+                            {
+                                'api-version': "6.0",
+                                token: "repoV2/" & newProjectId & "/" & LookUp(
+                                    colProjectRepos,
+                                    name = newPipelineTemplateRepository
+                                ).id,
+                                merge: true,
+                                accessControlEntries: {
+                                    descriptor: First(projectBuildServiceAccount).descriptor,
+                                    allow: 16404,
+                                    deny: 0
+                                }
+                            }
+                        );
+                                
                         If(newProjectInstallTemplates,
                 
                             UpdateContext({fileContent: GetGithubFileContent.Run(newPipelineTemplateVersion).filecontent});
@@ -5315,42 +4938,36 @@ AzureDevOpsProjects As screen:
                                 }
                             );
                 
-                            ClearCollect(colProjectPipelines, CustomAzureDevOps.GetPipelines(ddOrganization.Selected.AccountName, currentProject.name, {'api-version': "6.0"}).value);
-                            If(IsBlank(LookUp(colProjectPipelines, name = "sync-pipeline-repo")),
-                                // create new sync pipeline
-                                UpdateContext({syncPipeline: CustomAzureDevOps.CreatePipeline(ddOrganization.Selected.AccountName, newProjectName, {
-                                    'api-version': "6.0",
-                                    folder: "ALM Accelerator Templates",
-                                    name: "sync-pipeline-repo",
-                                    configuration: {
-                                        type: "yaml",
-                                        path: "/Pipelines/sync-pipeline-repo.yml",
-                                        repository: {
-                                            id: LookUp(colProjectRepos, name = newPipelineTemplateRepository).id,
-                                            name: newPipelineTemplateRepository,
-                                            type: "azureReposGit"
-                                        }
+                            UpdateContext({syncPipeline: CustomAzureDevOps.CreatePipeline(ddOrganization.Selected.AccountName, newProjectName, {
+                                'api-version': "6.0",
+                                folder: "ALM Accelerator Templates",
+                                name: "sync-pipeline-repo",
+                                configuration: {
+                                    type: "yaml",
+                                    path: "/Pipelines/sync-pipeline-repo.yml",
+                                    repository: {
+                                        id: LookUp(colProjectRepos, name = newPipelineTemplateRepository).id,
+                                        name: newPipelineTemplateRepository,
+                                        type: "azureReposGit"
                                     }
-                                }).id});
-                            ,
-                              UpdateContext({syncPipeline: LookUp(colProjectPipelines, name = "sync-pipeline-repo").id});
-                                  
-                            );
-                                
+                                }
+                            }).id});
+                        
                             UpdateContext({syncPipelineRun: CustomAzureDevOps.RunSyncPipeline(ddOrganization.Selected.AccountName, newProjectName, syncPipeline, {
-                                    'api-version': "6.0",
-                                    definition: {
-                                        id: syncPipeline
-                                    },
-                                    templateParameters: {
-                                        BranchToCreate: "initialSync",
-                                        TargetBranch: "main",
-                                        SyncFrom: "Tag",
-                                        SourceBranchOrTag: newPipelineTemplateVersion,
-                                        AutoCompletePR: true,
-                                        deleteSourceBranch: true
-                                    }
+                                'api-version': "6.0",
+                                definition: {
+                                    id: syncPipeline
+                                },
+                                templateParameters: {
+                                    BranchToCreate: "initialSync",
+                                    TargetBranch: "main",
+                                    SyncFrom: "Tag",
+                                    SourceBranchOrTag: newPipelineTemplateVersion,
+                                    AutoCompletePR: true,
+                                    deleteSourceBranch: true
+                                }
                             })}); 
+                            
                             // removed - it requires that custom connector is preinstalled in order to install the ALM Acc. solution. Need to find a solution for this
                             //GetPipelineRunResult.Run(currentOrganization.AccountName, newProjectName, syncPipelineRun.pipeline.id, syncPipelineRun.id, User().Email);
                         ,

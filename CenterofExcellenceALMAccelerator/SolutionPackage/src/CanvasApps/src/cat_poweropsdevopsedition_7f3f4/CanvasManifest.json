@@ -19,14 +19,15 @@
       "blockmovingcontrol": false,
       "cdsdataformatting": false,
       "classiccontrols": false,
+      "componentauthoring": true,
       "copyandmerge": false,
       "datatablev2control": true,
+      "dataverseactionsenabled": false,
       "delaycontrolrendering": true,
       "delayloadscreens": true,
       "disablecdsfileandlargeimage": false,
       "dynamicschema": false,
       "enableappembeddingux": false,
-      "enablebarcodereaderfeature": false,
       "enablecommandbar": false,
       "enablecomponentnamemaps": true,
       "enablecomponentscopeoldbehavior": true,
@@ -67,7 +68,6 @@
       "reverttooldpowerautomate": false,
       "rtlinstudiopreview": false,
       "rtlsupport": false,
-      "tabledoesntwraprecords": false,
       "untypedobject": false,
       "usedisplaynamemetadata": true,
       "useenforcesavedatalimits": true,
@@ -110,6 +110,7 @@
   "ScreenOrder": [
     "Home",
     "DeploymentHistoryScreen",
-    "DeploymentSettingsScreen"
+    "DeploymentSettingsScreen",
+    "Screen1"
   ]
 }
