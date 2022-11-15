@@ -5047,7 +5047,7 @@
       "LayoutName": "",
       "MetaDataIDKey": "",
       "Name": "btnViewConnections",
-      "ParentIndex": 7,
+      "ParentIndex": 6,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -5377,7 +5377,7 @@
       "LayoutName": "",
       "MetaDataIDKey": "",
       "Name": "btnViewPermissions",
-      "ParentIndex": 6,
+      "ParentIndex": 5,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -21900,7 +21900,7 @@
       "LayoutName": "",
       "MetaDataIDKey": "",
       "Name": "galConnections_2",
-      "ParentIndex": 5,
+      "ParentIndex": 7,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -27861,7 +27861,14 @@
       "ControlPropertyState": [
         "Live",
         "Overflow",
-        "Text",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "ThisItem.Result",
+          "InvariantPropertyName": "Text",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Role",
         "Color",
         "DisabledColor",

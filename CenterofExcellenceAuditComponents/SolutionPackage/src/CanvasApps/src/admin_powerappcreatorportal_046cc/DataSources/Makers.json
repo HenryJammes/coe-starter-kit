@@ -11,6 +11,7 @@
     "NativeCDSDataSourceInfoNameMapping": {
       "_ownerid_value": "Owner",
       "admin_accountenabled": "Account Enabled",
+      "admin_admin_aibuildermodel_AiCreator_admin_make": "AiBuilderModels",
       "admin_admin_bpf_maker": "Business Process Flows",
       "admin_admin_solution_SolutionCreator_admin_make": "Power Platform Solutions",
       "admin_App_AppOwner_admin_Maker": "PowerApps Apps",
@@ -76,6 +77,7 @@
       "admin_RPA_RPAOwner_admin_Maker": "Desktop flows",
       "admin_userisserviceprinciple": "UserIsServicePrinciple",
       "admin_userprincipalname": "User Principal Name",
+      "admin_userprinciplenamewithoutspecialchars": "User Principle Name Without Special Chars",
       "coe_EnvCreationRequest_SystemAdmins": "Environment Creation Requests",
       "createdby": "Created By",
       "createdon": "Created On",
